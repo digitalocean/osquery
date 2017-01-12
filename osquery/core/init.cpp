@@ -23,6 +23,7 @@
 #include <Windows.h>
 #include <signal.h>
 #else
+#include <curl/curl.h>
 #include <unistd.h>
 #endif
 
@@ -253,6 +254,8 @@ void Initializer::platformSetup() {
     ::CoUninitialize();
   }
 #else
+  // libcurl global initialization
+  curl_global_init(CURL_GLOBAL_ALL);
 #endif
 }
 
@@ -261,6 +264,7 @@ void Initializer::platformTeardown() {
 #ifdef WIN32
   ::CoUninitialize();
 #else
+  curl_global_cleanup();
 #endif
 }
 
