@@ -104,6 +104,7 @@ function platform_linux_main() {
   brew_dependency osquery/osquery-local/libdpkg
   brew_dependency osquery/osquery-local/librpm
   brew_dependency osquery/osquery-local/lldpd
+  brew_dependency osquery/osquery-local/smartmontools
 }
 
 function platform_darwin_main() {

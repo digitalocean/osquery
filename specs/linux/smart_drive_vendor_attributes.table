@@ -1,0 +1,20 @@
+table_name("smart_drive_vendor_attributes")
+description("SMART attributes of drives")
+schema([
+    Column("device_name", TEXT, "Name of block device", index=True),
+    Column("id", INTEGER,
+        "Attribute ID"),
+    Column("attr_name", TEXT, "Attribute name"),
+    Column("threshold", INTEGER,
+        "Values beyond which attributes should not pass under normal operation"
+    ),
+    Column("value", INTEGER, "Normalized value of attribute, between 1-253"),
+    Column("worst", INTEGER, "Worst observed normalized value"),
+    Column("raw_value", BIGINT, "Vendor implemented/specific value"),
+    Column("flag", TEXT, "Attribute flag in hex"),
+    Column("flag_type", TEXT, "Attribute flag type"),
+    Column("flag_updated", TEXT, "Attribute flag update status"),
+    Column("when_failed", TEXT,
+        "Short description of last or current failure"),
+])
+implementation("system/smart_drives@genSmartDevVendorAttrs")
