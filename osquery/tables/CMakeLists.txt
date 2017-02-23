@@ -58,6 +58,7 @@ else()
   file(GLOB OSQUERY_LINUX_TABLES_TESTS "*/linux/tests/*.cpp")
   ADD_OSQUERY_TABLE_TEST(${OSQUERY_LINUX_TABLES_TESTS})
 
+  ADD_OSQUERY_LINK_ADDITIONAL("smartctl")
   ADD_OSQUERY_LINK_ADDITIONAL("libresolv.so")
   ADD_OSQUERY_LINK_ADDITIONAL("cryptsetup devmapper")
   ADD_OSQUERY_LINK_ADDITIONAL("gcrypt gpg-error")
