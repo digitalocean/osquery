@@ -2,6 +2,8 @@ table_name("smart_drive_vendor_attributes")
 description("SMART attributes of drives")
 schema([
     Column("device_name", TEXT, "Name of block device", index=True),
+    Column("device_id", INTEGER,
+        "Physical device id of device, only valid when hardware storage controller exists"),
     Column("id", INTEGER,
         "Attribute ID"),
     Column("attr_name", TEXT, "Attribute name"),
