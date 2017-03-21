@@ -31,6 +31,10 @@ struct hwSmartCtl {
   int maxID;
 };
 
+// delUdevDevice is a lambda function meant to be used with smart pointers for
+// unreffing for udev_device pointers
+auto delUdevDevice = [](udev_device* d) { udev_device_unref(d); };
+
 // Look-up table for driver to smartctl controller name.
 static const std::map<std::string, std::string> kSWDriverToClter = {
     {"ahci", "sat"},
@@ -43,7 +47,7 @@ static const std::map<std::string, hwSmartCtl> kHWDriverToClter = {
 
 void walkUdevSubSystem(
     std::string subsystem,
-    std::function<void(udev_list_entry*, udev*)> handleDevF) {
+    std::function<void(udev_list_entry* const&, udev* const&)> handleDevF) {
   auto delUdev = [](udev* u) { udev_unref(u); };
   std::unique_ptr<udev, decltype(delUdev)> ud(udev_new(), delUdev);
 
@@ -56,7 +60,6 @@ void walkUdevSubSystem(
   std::unique_ptr<udev_enumerate, decltype(delUdevEnum)> enumerate(
       udev_enumerate_new(ud.get()), delUdevEnum);
 
-  // udev_enumerate* enumerate = udev_enumerate_new(ud.get());
   udev_enumerate_add_match_subsystem(enumerate.get(), subsystem.c_str());
   udev_enumerate_scan_devices(enumerate.get());
   udev_list_entry* devices = udev_enumerate_get_list_entry(enumerate.get());
@@ -70,22 +73,24 @@ void walkUdevSubSystem(
 std::vector<std::string> getBlkDevices() {
   std::vector<std::string> results;
 
-  walkUdevSubSystem("block", [&results](udev_list_entry* entry, udev* ud) {
-    const char* path = udev_list_entry_get_name(entry);
-    if (path == nullptr) {
-      return;
-    }
-    if (strstr(path, "virtual")) {
-      return;
-    }
+  walkUdevSubSystem(
+      "block", [&results](udev_list_entry* const& entry, udev* const& ud) {
+        const char* path = udev_list_entry_get_name(entry);
+        if (path == nullptr) {
+          return;
+        }
+        if (strstr(path, "virtual")) {
+          return;
+        }
 
-    udev_device* dev = udev_device_new_from_syspath(ud, path);
-    if (dev == nullptr) {
-      return;
-    }
+        std::unique_ptr<udev_device, decltype(delUdevDevice)> dev(
+            udev_device_new_from_syspath(ud, path), delUdevDevice);
+        if (dev.get() == nullptr) {
+          return;
+        }
 
-    results.push_back(udev_device_get_devnode(dev));
-  });
+        results.push_back(udev_device_get_devnode(dev.get()));
+      });
 
   return results;
 }
@@ -93,23 +98,31 @@ std::vector<std::string> getBlkDevices() {
 std::vector<std::string> getStorageCtlerClassDrivers() {
   std::vector<std::string> results;
 
-  walkUdevSubSystem("pci", [&results](udev_list_entry* entry, udev* ud) {
-    const char* path = udev_list_entry_get_name(entry);
-    if (!path) {
-      return;
-    }
+  walkUdevSubSystem(
+      "pci", [&results](udev_list_entry* const& entry, udev* const& ud) {
+        const char* path = udev_list_entry_get_name(entry);
+        if (path == nullptr) {
+          return;
+        }
 
-    udev_device* device = udev_device_new_from_syspath(ud, path);
-    if (UdevEventPublisher::getValue(device, "ID_PCI_CLASS_FROM_DATABASE") ==
-        "Mass storage controller") {
-      std::string driverName = UdevEventPublisher::getValue(device, "DRIVER");
+        std::unique_ptr<udev_device, decltype(delUdevDevice)> device(
+            udev_device_new_from_syspath(ud, path), delUdevDevice);
+        if (device.get() == nullptr) {
+          return;
+        }
 
-      auto i = std::lower_bound(results.begin(), results.end(), driverName);
-      if (i == results.end() || driverName < *i) {
-        results.insert(i, driverName);
-      }
-    }
-  });
+        if (UdevEventPublisher::getValue(device.get(),
+                                         "ID_PCI_CLASS_FROM_DATABASE") ==
+            "Mass storage controller") {
+          std::string driverName =
+              UdevEventPublisher::getValue(device.get(), "DRIVER");
+
+          auto i = std::lower_bound(results.begin(), results.end(), driverName);
+          if (i == results.end() || driverName < *i) {
+            results.insert(i, driverName);
+          }
+        }
+      });
 
   return results;
 }
@@ -135,7 +148,7 @@ bool getSmartCtlDeviceType(std::vector<std::string> const& storageDrivers,
       return true;
     } catch (std::out_of_range) {
       LOG(WARNING) << "Driver not supported: " << storageDrivers[0];
-      // if none is found, none is supported.
+      // If none is found, none is supported.
       return false;
     }
 
@@ -197,7 +210,7 @@ void walkSmartDevices(std::function<void(libsmartctl::Client&,
   std::vector<std::string> devs = getBlkDevices();
   for (auto const& dev : devs) {
     if (type != "") {
-      // if type is not null can skip the partitions
+      // If type is not null can skip the partitions
       if (dev.find_first_of("0123456789") != std::string::npos) {
         continue;
       }
@@ -210,7 +223,7 @@ void walkSmartDevices(std::function<void(libsmartctl::Client&,
           LOG(WARNING) << "Error while trying to identify device";
           continue;
         }
-        // if device is not identifiable, the type is invalid, skip
+        // If device is not identifiable, the type is invalid, skip
         if (!cantId.content) {
           handleDevF(c, dev, fullType, i);
         }
