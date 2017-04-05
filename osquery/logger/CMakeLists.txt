@@ -18,6 +18,17 @@ else()
   ADD_OSQUERY_LINK_ADDITIONAL("aws-cpp-sdk-core")
 endif()
 
+if(NOT WINDOWS)
+  ADD_OSQUERY_LINK_ADDITIONAL("z")
+  ADD_OSQUERY_LINK_ADDITIONAL("pthread")
+
+  if(APPLE)
+    ADD_OSQUERY_LINK_ADDITIONAL("${BUILD_DEPS}/lib/librdkafka.dylib")
+  else()
+    ADD_OSQUERY_LINK_ADDITIONAL("rdkafka")
+  endif()
+endif()
+
 ADD_OSQUERY_LIBRARY(FALSE osquery_logger_plugins ${OSQUERY_LOGGER_PLUGINS})
 
 file(GLOB OSQUERY_LOGGER_TESTS "tests/*.cpp")
