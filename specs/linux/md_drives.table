@@ -1,0 +1,8 @@
+table_name("md_drives")
+description("Drive devices used for Software RAID")
+schema([
+    Column("md_device_name", TEXT, "md device name"),
+    Column("drive_name", TEXT, "Drive device name"),
+    Column("status", INTEGER, "Status of the drive. 0 is down, 1 is up"),
+])
+implementation("system/md_stat@genMDDrives")
