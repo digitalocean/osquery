@@ -17,6 +17,9 @@ schema([
     Column("resync_progress", TEXT, "Progress of the resync activity"),
     Column("resync_finish", TEXT, "Estimated duration of resync activity"),
     Column("resync_speed", TEXT, "Speed of resync activity"),
+    Column("check_array_progress", TEXT, "Progress of the resync activity"),
+    Column("check_array_finish", TEXT, "Estimated duration of resync activity"),
+    Column("check_array_speed", TEXT, "Speed of resync activity"),
     Column("unused_devices", TEXT, "Unused devices"),
 ])
 implementation("system/md_stat@genMDDevices")

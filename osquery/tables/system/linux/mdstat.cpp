@@ -31,6 +31,7 @@ struct MDDevice {
   std::string recovery;
   std::string resync;
   std::string bitmap;
+  std::string checkArray;
 };
 
 struct MDStat {
@@ -186,6 +187,12 @@ void parseMDStat(MDStat& result) {
           // Add an extra line for next iteration if so..
           n += 1;
 
+        } else if ((pos = lines[n + 1].find("check =")) != std::string::npos) {
+          mdd.checkArray = lines[n + 1].substr(pos + sizeof("check =") - 1);
+          trimStr(mdd.checkArray);
+          // Add an extra line for next iteration if so..
+          n += 1;
+
         } else if ((pos = lines[n + 1].find("bitmap:")) != std::string::npos) {
           mdd.bitmap = lines[n + 1].substr(pos + sizeof("bitmap:") - 1);
           trimStr(mdd.bitmap);
@@ -260,6 +267,10 @@ QueryData genMDDevices(QueryContext& context) {
 
     if (device.resync != "") {
       handleR(device.resync, "resync");
+    }
+
+    if (device.checkArray != "") {
+      handleR(device.checkArray, "check_array");
     }
 
     if (device.bitmap != "") {
