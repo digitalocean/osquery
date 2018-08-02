@@ -551,8 +551,51 @@ void genSMBIOSMemoryDeviceMappedAddresses(size_t index,
   results.push_back(std::move(r));
 }
 
+std::string dmiStringFromIndex(uint8_t* data, uint8_t* address, uint8_t index);
+
+void genSMBIOSOEMStrings(size_t index,
+                         const SMBStructHeader* hdr,
+                         uint8_t* address,
+                         uint8_t* textAddrs,
+                         size_t size,
+                         QueryData& results) {
+  if (hdr->type != kSMBIOSTypeOEMStrings || size < 0x12) {
+    return;
+  }
+
+  auto handle = dmiWordToHexStr(address, 0x02);
+
+  auto numStrings = address[0x01];
+  for (auto i = 1; i <= numStrings; i++) {
+    results.emplace_back(
+        Row{{"handle", handle},
+            {"number", INTEGER(static_cast<int>(i))},
+            {"value", dmiStringFromIndex(textAddrs, address, i)}});
+  }
+}
+
 std::string dmiString(uint8_t* data, uint8_t* address, size_t offset) {
   auto index = address[offset];
+  if (index == 0) {
+    return "";
+  }
+
+  auto bp = reinterpret_cast<char*>(data);
+  while (index > 1) {
+    while (*bp != 0) {
+      bp++;
+    }
+    bp++;
+    index--;
+  }
+
+  std::string str{bp};
+  // Sometimes vendors leave extraneous spaces on the right side.
+  boost::algorithm::trim_right(str);
+  return str;
+}
+
+std::string dmiStringFromIndex(uint8_t* data, uint8_t* address, uint8_t index) {
   if (index == 0) {
     return "";
   }
