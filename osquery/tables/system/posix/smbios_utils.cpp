@@ -565,7 +565,7 @@ void genSMBIOSOEMStrings(size_t index,
 
   auto handle = dmiWordToHexStr(address, 0x02);
 
-  auto numStrings = address[0x01];
+  auto numStrings = address[0x04];
   for (auto i = 1; i <= numStrings; i++) {
     results.emplace_back(
         Row{{"handle", handle},
