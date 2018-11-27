@@ -70,4 +70,3 @@ cscope.out
 # Ignored components
 /external/*
 !/external/CMakeLists.txt
-
